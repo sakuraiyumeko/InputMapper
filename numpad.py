@@ -1,6 +1,15 @@
 import pynput
+import time
+import tomllib
 
-#mapping list
+# config import
+with open("config.toml", "rb") as f:
+    config = tomllib.load(f)
+
+isDebug = config["isdebug"]
+
+
+# mapping list
 vktonum = {
     96: 0,
     97: 1,
@@ -13,6 +22,7 @@ vktonum = {
     104: 8,
     105: 9,
 }
+
 
 map = {
     0: pynput.keyboard.Key.space,
@@ -31,6 +41,7 @@ map = {
     (9, 0): "0",(9, 1): "1",(9, 2): "2",(9, 3): "3",(9, 4): "4",(9, 5): "5",(9, 6): "6",(9, 7): "7",(9, 8): "8",(9, 9): "9",
 }
 
+
 buffer = []
 pressed = []
 
@@ -40,17 +51,32 @@ keyboard = pynput.keyboard.Controller()
 
 
 def on_press(key):
-    print(key)
+    if isDebug:
+        try:
+            print(
+                f"{key}:{key.vk}",
+                time.strftime("Local: %Y-%m-%d %H:%M:%S"),
+                time.strftime("UTC: %Y-%m-%d %H:%M:%S", time.gmtime()),
+                sep="  ",
+            )
+        except AttributeError:
+            print(
+                f"{key}:None",
+                time.strftime("Local: %Y-%m-%d %H:%M:%S"),
+                time.strftime("UTC: %Y-%m-%d %H:%M:%S", time.gmtime()),
+                sep="  ",
+            )
     try:
         if key.vk in numpad:
             buffer.append(key.vk)
-        
+
+        # key value of '+' is 107
         if key.vk == 107:
             if len(buffer) != 0:
-                for i in range(0, len(buffer)+1):
+                for i in range(0, len(buffer) + 1):
                     keyboard.press(pynput.keyboard.Key.backspace)
                     keyboard.release(pynput.keyboard.Key.backspace)
-        
+
             i = 0
             while i < len(buffer):
                 if buffer[i] == 110:
@@ -66,13 +92,13 @@ def on_press(key):
                     if i >= len(buffer):
                         break
                     i += 1
-        
+
                 try:
                     a = buffer[i]
                     b = buffer[i + 1]
                 except IndexError:
                     break
-        
+
                 try:
                     char = map[(vktonum[a], vktonum[b])]
                     keyboard.press(char)
@@ -82,15 +108,15 @@ def on_press(key):
                     pressed.clear()
                 except (KeyError, UnboundLocalError):
                     print("unexpected input.")
-        
+
                 i += 2
-        
+
             for keys in pressed:
                 keyboard.release(keys)
-        
+
             pressed.clear()
             buffer.clear()
-                    
+
     except AttributeError:
 
         if key == pynput.keyboard.Key.backspace:
